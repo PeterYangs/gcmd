@@ -1,4 +1,4 @@
-module github.com/PeterYangs/cmd
+module github.com/PeterYangs/gcmd
 
 go 1.16
 

@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/PeterYangs/cmd"
+	"github.com/PeterYangs/gcmd"
 )
 
 func main() {
 
-	cmd.Command("php index.php").Start()
+	gcmd.Command("php index.php").Start()
 
 }

@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/PeterYangs/cmd"
+	"github.com/PeterYangs/gcmd"
 )
 
 func main() {
 
-	command := cmd.Command("php index.php").WaitCustomChan()
+	command := gcmd.Command("php index.php").WaitCustomChan()
 
 	outChan := command.GetCustomOutChan()
 	errChan := command.GetCustomErrChan()
