@@ -10,7 +10,7 @@ while (true){
 
     }
 
-    echo 'echo success';
+    echo 'echo success'.PHP_EOL;
 
     $index++;
 
