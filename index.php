@@ -7,6 +7,7 @@ while (true){
     if($index>=10){
 
         throw new Exception("error here!");
+//        break;
 
     }
 

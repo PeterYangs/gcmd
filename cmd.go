@@ -27,6 +27,8 @@ type Cmd struct {
 	exportErr      bool
 	waitCustomChan bool //是否等待自定义输出管道处理完毕
 	customChanWait *sync.WaitGroup
+	throwPanic     bool //是否出错抛出异常
+
 }
 
 func Command(command string) *Cmd {
@@ -101,6 +103,14 @@ func (c *Cmd) SetTimeout(timeout time.Duration) *Cmd {
 
 }
 
+// ThrowPanic 出错抛出异常
+func (c *Cmd) ThrowPanic() *Cmd {
+
+	c.throwPanic = true
+
+	return c
+}
+
 func (c *Cmd) WaitCustomChan() *Cmd {
 
 	c.waitCustomChan = true
@@ -109,7 +119,7 @@ func (c *Cmd) WaitCustomChan() *Cmd {
 }
 
 // Start run command
-func (c *Cmd) Start() {
+func (c *Cmd) Start() error {
 
 	//defer close(c.customOutChan)
 	//defer close(c.customErrChan)
@@ -134,17 +144,27 @@ func (c *Cmd) Start() {
 
 	if err != nil {
 
-		fmt.Println(err)
+		//fmt.Println(err)
 
-		return
+		if c.throwPanic {
+
+			panic(err)
+		}
+
+		return err
 	}
 
 	err = c.Cmd.Start()
 
 	if err != nil {
 
-		fmt.Println(err)
-		return
+		//fmt.Println(err)
+		if c.throwPanic {
+
+			panic(err)
+		}
+
+		return err
 	}
 
 	c.wait.Add(2)
@@ -156,8 +176,17 @@ func (c *Cmd) Start() {
 
 		fmt.Println("wait err:", err)
 
+		//panic()
+
 		close(c.customOutChan)
 		close(c.customErrChan)
+
+		if c.throwPanic {
+
+			panic(err)
+		}
+
+		return err
 
 	}
 
@@ -169,6 +198,7 @@ func (c *Cmd) Start() {
 		c.customChanWait.Wait()
 	}
 
+	return nil
 }
 
 func (c *Cmd) ConvertUtf8() *Cmd {
@@ -255,6 +285,7 @@ func getOut(outputBuf *bufio.Reader, types int, c *Cmd) {
 		if isOutToBash {
 
 			fmt.Print(string(out))
+
 		}
 
 	}
