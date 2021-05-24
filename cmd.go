@@ -2,6 +2,7 @@ package gcmd
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/PeterYangs/tools"
@@ -27,8 +28,9 @@ type Cmd struct {
 	exportErr      bool
 	waitCustomChan bool //是否等待自定义输出管道处理完毕
 	customChanWait *sync.WaitGroup
-	throwPanic     bool //是否出错抛出异常
-
+	throwPanic     bool          //是否出错抛出异常
+	outPut         *bytes.Buffer //输出返回值
+	isOutPut       bool          //是否返回输出
 }
 
 func Command(command string) *Cmd {
@@ -38,6 +40,7 @@ func Command(command string) *Cmd {
 		customOutChan:  make(chan []byte, 10),
 		customErrChan:  make(chan []byte, 10),
 		customChanWait: &sync.WaitGroup{},
+		outPut:         bytes.NewBuffer(nil),
 	}
 
 	cmd.Command = command
@@ -103,6 +106,13 @@ func (c *Cmd) SetTimeout(timeout time.Duration) *Cmd {
 
 }
 
+func (c *Cmd) OutPut() *Cmd {
+
+	c.isOutPut = true
+
+	return c
+}
+
 // ThrowPanic 出错抛出异常
 func (c *Cmd) ThrowPanic() *Cmd {
 
@@ -119,7 +129,7 @@ func (c *Cmd) WaitCustomChan() *Cmd {
 }
 
 // Start run command
-func (c *Cmd) Start() error {
+func (c *Cmd) Start() ([]byte, error) {
 
 	//defer close(c.customOutChan)
 	//defer close(c.customErrChan)
@@ -135,6 +145,7 @@ func (c *Cmd) Start() error {
 
 		close(cc.customOutChan)
 		close(cc.customErrChan)
+		cc.outPut.Reset()
 
 	}(c)
 
@@ -151,7 +162,7 @@ func (c *Cmd) Start() error {
 			panic(err)
 		}
 
-		return err
+		return c.outPut.Bytes(), err
 	}
 
 	err = c.Cmd.Start()
@@ -164,7 +175,7 @@ func (c *Cmd) Start() error {
 			panic(err)
 		}
 
-		return err
+		return c.outPut.Bytes(), err
 	}
 
 	c.wait.Add(2)
@@ -186,7 +197,7 @@ func (c *Cmd) Start() error {
 			panic(err)
 		}
 
-		return err
+		return c.outPut.Bytes(), err
 
 	}
 
@@ -198,7 +209,7 @@ func (c *Cmd) Start() error {
 		c.customChanWait.Wait()
 	}
 
-	return nil
+	return c.outPut.Bytes(), nil
 }
 
 func (c *Cmd) ConvertUtf8() *Cmd {
@@ -282,10 +293,17 @@ func getOut(outputBuf *bufio.Reader, types int, c *Cmd) {
 			c.customErrChan <- out
 		}
 
-		if isOutToBash {
+		if isOutToBash && !c.isOutPut {
 
 			fmt.Print(string(out))
 
+		}
+
+		if c.isOutPut {
+
+			//fmt.Println(111)
+
+			c.outPut.Write(out)
 		}
 
 	}

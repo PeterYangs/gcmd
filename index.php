@@ -1,5 +1,9 @@
 <?php
 
+// echo "success";
+//
+// exit;
+
 $index=0;
 
 while (true){
