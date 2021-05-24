@@ -129,7 +129,7 @@ func main() {
 ```
 
 ### Return Output
-```
+```go
 package main
 
 import (
